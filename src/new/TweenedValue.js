@@ -1,3 +1,9 @@
+// TODO:
+// - Add call() and wait() (which is just call(emptyFunction))
+// - Hook it up to Sprite (rename AnimationSurface)
+// - Add translate3d() support
+// - Hook it up to rAF
+
 var copyProperties = require('./util').copyProperties;
 var invariant = require('./util').invariant;
 
@@ -91,7 +97,13 @@ copyProperties(TweenedValue.prototype, {
     // TODO: make this work with call() and wait() (not hard)
     invariant(this.canUseCSS(), 'Cannot getCSS() if you cannot use CSS');
 
-    var keyframes = {};
+    var firstKeyframe = {};
+    firstKeyframe[property] = this.initialValue;
+
+    var keyframes = {
+      '0%': firstKeyframe
+    };
+
     var i;
     var totalTime = 0;
     for (i = 0; i < this.steps.length; i++) {
