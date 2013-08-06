@@ -26,8 +26,6 @@ var JSAnimatedCircle = React.createClass({
 });
 var App = React.createClass({
   render: function() {
-    // Build some simple DOM -- see leftnav.css for how
-    // it fits together.
     return (
       <div>
         <CSSAnimatedCircle />
