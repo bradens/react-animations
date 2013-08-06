@@ -26,7 +26,7 @@ var RawJSAnimatedCircle = React.createClass({
     return {x: 1};
   },
   componentDidMount: function() {
-    this.tweenState({x: new TweenedValue(0, [TweenStep.ease(1000, 100, EasingFunctions.ease)])});
+    this.tweenStateRaw({x: new TweenedValue(0, [TweenStep.ease(1000, 100, EasingFunctions.ease)])});
   },
   render: function() {
     return <Circle x={this.state.x * 2} />;

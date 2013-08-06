@@ -275,6 +275,12 @@ var TweenSprite = React.createClass({
 
 var tweens = [];
 
+function updateTickState(tween, time) {
+  var state = {};
+  state[tween.key] = tween.tweenedValue.getRawValue(time);
+  tween.component.setState(state);
+}
+
 function tick() {
   var nextTweens = [];
   var now = Date.now();
@@ -284,12 +290,10 @@ function tick() {
       continue;
     }
     var time = now - tween.start;
+    updateTickState(tween, Math.min(time, tween.tweenedValue.getTotalTime()));
     if (time > tween.tweenedValue.getTotalTime()) {
       continue;
     }
-    var state = {};
-    state[tween.key] = tween.tweenedValue.getRawValue(time);
-    tween.component.setState(state);
     nextTweens.push(tween);
   }
   tweens = nextTweens;
@@ -308,7 +312,7 @@ function enqueueTween(component, key, tweenedValue) {
 tick();
 
 var TweenMixin = {
-  tweenState: function(tweens) {
+  tweenStateRaw: function(tweens) {
     for (var key in tweens) {
       if (!tweens.hasOwnProperty(key)) {
         continue;
