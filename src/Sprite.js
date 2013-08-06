@@ -70,9 +70,10 @@ var Sprite = React.createClass({
     }
   },
   render: function() {
-    return this.transferPropsTo(
-      <div style={this.getStyle()}>{this.props.children}</div>
-    );
+    var style = {};
+    copyProperties(style, this.props.style);
+    copyProperties(style, this.getStyle());
+    return <div class={this.props.className} style={style}>{this.props.children}</div>;
   }
 });
 

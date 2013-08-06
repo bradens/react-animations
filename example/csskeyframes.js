@@ -4,62 +4,26 @@
 
 var Circle = React.createClass({
   render: function() {
-    return this.transferPropsTo(<Sprite class="Circle" />);
+    return this.transferPropsTo(<TweenSprite class="Circle" />);
   }
 });
-
-var PREFIX = 'react-animation-';
-var count = 0;
-
-function renderCSS(animation) {
-  // insert keyframes into DOM, return css animation stuff
-  var animationName = PREFIX + (count++);
-  var style = document.createElement('style');
-  style.type = 'text/css';
-  var content = '@-webkit-keyframes ' + animationName + ' {\n';
-  for (var key in animation.keyframes) {
-    content += key + ' {\n';
-    for (var prop in animation.keyframes[key]) {
-      content += prop + ': ' + animation.keyframes[key][prop] + ';\n';
-    }
-    content += '}\n';
-  }
-  content += '}\n';
-  style.innerHTML = content;
-  document.head.appendChild(style);
-
-  // now create the animation style
-  // TODO: also include the last keyframe data
-  return {
-    '-webkit-animation': animationName + ' ' + animation.duration + 's'
-  };
-}
-
-var xTweenedValue = new TweenedValue(0, [TweenStep.ease(10, 100, EasingFunctions.ease)]);
-var zeroTweenedValue = constantTweenedValueForTranslate3d(xTweenedValue, 0);
 
 var CSSAnimatedCircle = React.createClass({
-  componentWillMount: function() {
-    this.css = renderCSS(getTranslate3dAnimation(xTweenedValue, zeroTweenedValue, zeroTweenedValue));
+  getInitialState: function() {
+    return {x: new TweenedValue(0, [TweenStep.ease(1000, 100, EasingFunctions.ease)])};
   },
   render: function() {
-    return (
-      <StaticSprite>
-        <Circle style={this.css} />
-      </StaticSprite>
-    );
+    return <Circle x={this.state.x} />;
   }
 });
-/*
 var JSAnimatedCircle = React.createClass({
   getInitialState: function() {
-    return {left: xTweenedValue};
+    return {x: new TweenedValue(0, [TweenStep.ease(1000, 100, EasingFunctions.ease)], true)};
   },
   render: function() {
-    return <Sprite x={this.state.left}><
+    return <Circle x={this.state.x} />;
   }
 });
-*/
 var App = React.createClass({
   render: function() {
     // Build some simple DOM -- see leftnav.css for how
@@ -67,6 +31,7 @@ var App = React.createClass({
     return (
       <div>
         <CSSAnimatedCircle />
+        <JSAnimatedCircle />
       </div>
     );
   }

@@ -1,3 +1,4 @@
+/** @jsx React.DOM */
 // TODO:
 // - Add call() and wait() (which is just call(emptyFunction))
 // - Hook it up to Sprite (rename AnimationSurface)
@@ -234,10 +235,80 @@ function getTranslate3dAnimation(xTweenedValue, yTweenedValue, zTweenedValue) {
     };
   }
   return {
-    duration: duration,
+    duration: duration / 1000,
     keyframes: keyframes
   };
 }
+
+// Sprite that supports retained mode (css animations)
+
+var PREFIX = 'react-animation-';
+var count = 0;
+
+function renderCSS(animation) {
+  // insert keyframes into DOM, return css animation stuff
+  var animationName = PREFIX + (count++);
+  var style = document.createElement('style');
+  style.type = 'text/css';
+  var content = '@-webkit-keyframes ' + animationName + ' {\n';
+  for (var key in animation.keyframes) {
+    content += key + ' {\n';
+    for (var prop in animation.keyframes[key]) {
+      content += prop + ': ' + animation.keyframes[key][prop] + ';\n';
+    }
+    content += '}\n';
+  }
+  content += '}\n';
+  style.innerHTML = content;
+  document.head.appendChild(style);
+
+  // now create the animation style
+  var styleProp = {
+    '-webkit-animation': animationName + ' ' + animation.duration + 's'
+  };
+  copyProperties(styleProp, animation.keyframes[key]);
+  styleProp['-webkit-animation-timing-function'] = undefined;
+  return styleProp;
+}
+
+var TweenSprite = React.createClass({
+  componentWillMount: function() {
+    var x = this.props.x;
+    var y = this.props.y;
+    var z = this.props.z;
+    var aTween = x || y || z;
+    invariant(aTween, 'no x y or z provided');
+    if (!x) {
+      x = constantTweenedValueForTranslate3d(aTween, 0);
+    }
+    if (!y) {
+      y = constantTweenedValueForTranslate3d(aTween, 0);
+    }
+    if (!z) {
+      z = constantTweenedValueForTranslate3d(aTween, 0);
+    }
+
+    this.css = null;
+    if (!aTween.canUseCSS()) {
+      // can't use css, queue js
+      enqueueTween(this, 'x', x);
+      enqueueTween(this, 'y', y);
+      enqueueTween(this, 'z', z);
+      return;
+    }
+    this.css = renderCSS(getTranslate3dAnimation(x, y, z));
+  },
+  getInitialState: function() {
+    return {x: 0, y: 0, z: 0};
+  },
+  render: function() {
+    if (this.css) {
+      return <Sprite style={this.css} class={this.props.className}>{this.props.children}</Sprite>;
+    } else {
+      return <Sprite class={this.props.className} x={this.state.x} y={this.state.y} z={this.state.z} />;
+    }
+  }
+});
 
 var tweens = [];
 
