@@ -9,19 +9,27 @@ var Circle = React.createClass({
 });
 
 var CSSAnimatedCircle = React.createClass({
-  getInitialState: function() {
-    return {x: new TweenedValue(0, [TweenStep.ease(1000, 100, EasingFunctions.ease)])};
-  },
   render: function() {
-    return <Circle x={this.state.x} />;
+    var x = new TweenedValue(0, [TweenStep.ease(1000, 100, EasingFunctions.ease)]);
+    return <Circle x={x} />;
   }
 });
 var JSAnimatedCircle = React.createClass({
+  render: function() {
+    var x = new TweenedValue(0, [TweenStep.ease(1000, 100, EasingFunctions.ease)], true);
+    return <Circle x={x} />;
+  }
+});
+var RawJSAnimatedCircle = React.createClass({
+  mixins: [TweenMixin],
   getInitialState: function() {
-    return {x: new TweenedValue(0, [TweenStep.ease(1000, 100, EasingFunctions.ease)], true)};
+    return {x: 1};
+  },
+  componentDidMount: function() {
+    this.tweenState({x: new TweenedValue(0, [TweenStep.ease(1000, 100, EasingFunctions.ease)])});
   },
   render: function() {
-    return <Circle x={this.state.x} />;
+    return <Circle x={this.state.x * 2} />;
   }
 });
 var App = React.createClass({
@@ -30,6 +38,7 @@ var App = React.createClass({
       <div>
         <CSSAnimatedCircle />
         <JSAnimatedCircle />
+        <RawJSAnimatedCircle />
       </div>
     );
   }

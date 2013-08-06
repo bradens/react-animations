@@ -232,7 +232,14 @@ var TweenSprite = React.createClass({
     var y = this.props.y;
     var z = this.props.z;
     var aTween = x || y || z;
-    invariant(aTween, 'no x y or z provided');
+    invariant(aTween !== undefined, 'no x y or z provided');
+    this.tween = false;
+    this.css = null;
+    if (!aTween.steps) {
+      // not a tween
+      return;
+    }
+    this.tween = true;
     if (!x) {
       x = constantTweenedValueForTranslate3d(aTween, 0);
     }
@@ -243,7 +250,6 @@ var TweenSprite = React.createClass({
       z = constantTweenedValueForTranslate3d(aTween, 0);
     }
 
-    this.css = null;
     if (!aTween.canUseCSS()) {
       // can't use css, queue js
       enqueueTween(this, 'x', x);
@@ -257,7 +263,9 @@ var TweenSprite = React.createClass({
     return {x: 0, y: 0, z: 0};
   },
   render: function() {
-    if (this.css) {
+    if (!this.tween) {
+      return <Sprite style={this.props.style} class={this.props.className} x={this.props.x || 0} y={this.props.y || 0} z={this.props.z || 0}>{this.props.children}</Sprite>;
+    } else if (this.css) {
       return <Sprite style={this.css} class={this.props.className}>{this.props.children}</Sprite>;
     } else {
       return <Sprite class={this.props.className} x={this.state.x} y={this.state.y} z={this.state.z} />;
@@ -298,3 +306,15 @@ function enqueueTween(component, key, tweenedValue) {
 }
 
 tick();
+
+var TweenMixin = {
+  tweenState: function(tweens) {
+    for (var key in tweens) {
+      if (!tweens.hasOwnProperty(key)) {
+        continue;
+      }
+      var tween = tweens[key];
+      enqueueTween(this, key, tween);
+    }
+  }
+};
