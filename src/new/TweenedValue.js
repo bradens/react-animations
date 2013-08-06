@@ -1,12 +1,7 @@
 /** @jsx React.DOM */
 // TODO:
 // - Add call() and wait() (which is just call(emptyFunction))
-// - Hook it up to Sprite (rename AnimationSurface)
-// - Add translate3d() support
-// - Hook it up to rAF
 
-//var copyProperties = require('./util').copyProperties;
-//var invariant = require('./util').invariant;
 function copyProperties(dst, src) {
   for (var k in src) {
     if (!src.hasOwnProperty(k)) {
@@ -55,18 +50,6 @@ function TweenStep(time, value, ease) {
   this.value = value;
   this.ease = ease(time);
 }
-
-copyProperties(TweenStep.prototype, {
-  /*
-  getCSSKeyframeProperties: function(property) {
-    var keyframe = {
-      animationTimingFunction: this.ease.css
-    };
-    keyframe[property] = this.value;
-    return keyframe;
-  }
-*/
-});
 
 // Factory functions
 copyProperties(TweenStep, {
@@ -158,35 +141,6 @@ copyProperties(TweenedValue.prototype, {
     }
     return keyframeTimes;
   }
-  /*
-  getCSS: function(property) {
-    // TODO: make this work with call() and wait() (not hard)
-    invariant(this.canUseCSS(), 'Cannot getCSS() if you cannot use CSS');
-
-    var firstKeyframe = {};
-    firstKeyframe[property] = this.initialValue;
-
-    var keyframes = {
-      '0%': firstKeyframe
-    };
-
-    var i;
-    var totalTime = 0;
-    for (i = 0; i < this.steps.length; i++) {
-      totalTime += this.steps[i].time;
-    }
-    var currentTime = 0;
-    for (i = 0; i < this.steps.length; i++) {
-      var step = this.steps[i];
-      currentTime += step.time;
-      var pct = currentTime / totalTime;
-      keyframes[(pct * 100) + '%'] = step.getCSSKeyframeProperties(property);
-    }
-    return {
-      duration: (totalTime / 1000) + 's',
-      keyframes: keyframes
-    };
-  }*/
 });
 
 // translate3d stuff
@@ -272,6 +226,7 @@ function renderCSS(animation) {
 }
 
 var TweenSprite = React.createClass({
+  // TODO: handle changing props (canceling animations, etc)
   componentWillMount: function() {
     var x = this.props.x;
     var y = this.props.y;
@@ -343,20 +298,3 @@ function enqueueTween(component, key, tweenedValue) {
 }
 
 tick();
-
-/*
-var tv = new TweenedValue(
-  0,
-  [
-    TweenStep.ease(10, 100, EasingFunctions.ease)
-  ]
-);
-
-var tz = constantTweenedValueForTranslate3d(tv, 0);
-
-
-console.log(getTranslate3dAnimation(tv, tz, tz));
-*/
-//console.log(tv.getRawValue(0));
-//console.log(tv.getRawValue(5));
-//console.log(tv.getRawValue(10));
