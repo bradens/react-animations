@@ -321,12 +321,13 @@ function tick() {
       continue;
     }
     var time = now - tween.start;
-    if (time > tween.value.getTotalTime()) {
+    if (time > tween.tweenedValue.getTotalTime()) {
       continue;
     }
     var state = {};
     state[tween.key] = tween.tweenedValue.getRawValue(time);
     tween.component.setState(state);
+    nextTweens.push(tween);
   }
   tweens = nextTweens;
   requestAnimationFrame(tick);
