@@ -1,5 +1,5 @@
 //https://github.com/arian/cubic-bezier
-module.exports = function(x1, y1, x2, y2, epsilon){
+window.cubicBeizer = function(x1, y1, x2, y2, epsilon){
 
   var curveX = function(t){
     var v = 1 - t;

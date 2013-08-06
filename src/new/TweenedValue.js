@@ -4,10 +4,23 @@
 // - Add translate3d() support
 // - Hook it up to rAF
 
-var copyProperties = require('./util').copyProperties;
-var invariant = require('./util').invariant;
+//var copyProperties = require('./util').copyProperties;
+//var invariant = require('./util').invariant;
+function copyProperties(dst, src) {
+  for (var k in src) {
+    if (!src.hasOwnProperty(k)) {
+      continue;
+    }
+    dst[k] = src[k];
+  }
+  return dst;
+}
 
-var cubicBeizer = require('./cubicBeizer');
+function invariant(cond, message) {
+  if (!cond) {
+    throw new Error(message);
+  }
+}
 
 function getCubicBeizerEpsilon(duration) {
   return (1000 / 60 / duration) / 4;
@@ -216,7 +229,7 @@ function getTranslate3dAnimation(xTweenedValue, yTweenedValue, zTweenedValue) {
     invariant(cssEase, 'No CSS ease available');
     invariant(cssEase === yTweenedValue.getCSSEaseAtTime(rawTime) && cssEase === zTweenedValue.getCSSEaseAtTime(rawTime), 'CSS eases differed');
     keyframes[(keyframeTime * 100) + '%'] = {
-      '-webkit-transform': 'translate3d(' + xTweenedValue.getRawValueForAnimation(rawTime) + ',' + yTweenedValue.getRawValueForAnimation(rawTime)  + ',' + zTweenedValue.getRawValueForAnimation(rawTime) + ')',
+      '-webkit-transform': 'translate3d(' + xTweenedValue.getRawValueForAnimation(rawTime) + 'px,' + yTweenedValue.getRawValueForAnimation(rawTime)  + 'px,' + zTweenedValue.getRawValueForAnimation(rawTime) + 'px)',
       '-webkit-animation-timing-function': cssEase
     };
   }
@@ -226,7 +239,40 @@ function getTranslate3dAnimation(xTweenedValue, yTweenedValue, zTweenedValue) {
   };
 }
 
+var tweens = [];
 
+function tick() {
+  var nextTweens = [];
+  var now = Date.now();
+  for (var i = 0; i < tweens.length; i++) {
+    var tween = tweens[i];
+    if (!tween.component.isMounted()) {
+      continue;
+    }
+    var time = now - tween.start;
+    if (time > tween.value.getTotalTime()) {
+      continue;
+    }
+    var state = {};
+    state[tween.key] = tween.tweenedValue.getRawValue(time);
+    tween.component.setState(state);
+  }
+  tweens = nextTweens;
+  requestAnimationFrame(tick);
+}
+
+function enqueueTween(component, key, tweenedValue) {
+  tweens.push({
+    component: component,
+    key: key,
+    tweenedValue: tweenedValue,
+    start: Date.now()
+  });
+}
+
+tick();
+
+/*
 var tv = new TweenedValue(
   0,
   [
@@ -238,6 +284,7 @@ var tz = constantTweenedValueForTranslate3d(tv, 0);
 
 
 console.log(getTranslate3dAnimation(tv, tz, tz));
+*/
 //console.log(tv.getRawValue(0));
 //console.log(tv.getRawValue(5));
 //console.log(tv.getRawValue(10));
