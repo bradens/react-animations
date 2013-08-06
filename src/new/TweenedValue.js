@@ -92,7 +92,7 @@ copyProperties(TweenedValue.prototype, {
     }
 
     return true;
-  },
+  },/*
   getCSS: function(property) {
     // TODO: make this work with call() and wait() (not hard)
     invariant(this.canUseCSS(), 'Cannot getCSS() if you cannot use CSS');
@@ -120,7 +120,7 @@ copyProperties(TweenedValue.prototype, {
       duration: (totalTime / 1000) + 's',
       keyframes: keyframes
     };
-  }
+  }*/
 });
 
 
