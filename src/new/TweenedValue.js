@@ -43,6 +43,7 @@ function TweenStep(time, value, ease) {
 }
 
 copyProperties(TweenStep.prototype, {
+  /*
   getCSSKeyframeProperties: function(property) {
     var keyframe = {
       animationTimingFunction: this.ease.css
@@ -50,6 +51,18 @@ copyProperties(TweenStep.prototype, {
     keyframe[property] = this.value;
     return keyframe;
   }
+*/
+});
+
+// Factory functions
+copyProperties(TweenStep, {
+  ease: function(time, value, ease) {
+    return new TweenStep(time, value, ease);
+  },
+  wait: function(time) {
+    return new TweenStep(time, 0, function() { return 0; });
+  }
+  // TODO: can we integrate call() in here somehow?
 });
 
 // NO CALLBACKS
@@ -63,9 +76,11 @@ function TweenedValue(initialValue, steps, forceNoCSS) {
 
 copyProperties(TweenedValue.prototype, {
   getRawValue: function(time) {
-    // TODO: make this work with call() and wait() (not hard)
-
     this.usedRawValue = true;
+    return this.getRawValueForAnimation(time);
+  },
+  getRawValueForAnimation: function(time) {
+    // TODO: make this work with call() and wait() (not hard)
 
     var currentTimeInLoop = 0;
     for (var i = 0; i < this.steps.length; i++) {
@@ -77,6 +92,17 @@ copyProperties(TweenedValue.prototype, {
         return lastValue + (step.value - lastValue) * step.ease.js(elapsedTimeInCurrentStep / step.time);
       }
     }
+  },
+  getCSSEaseAtTime: function(time) {
+    invariant(this.canUseCSS(), 'Cannot use CSS');
+    var currentTime = 0;
+    for (var i = 0; i < this.steps.length; i++) {
+      currentTime += this.steps[i].time;
+      if (time < currentTime) {
+        return this.steps[i].ease.css;
+      }
+    }
+    return this.steps[this.steps.length - 1].ease.css;
   },
   canUseCSS: function() {
     if (this.forceNoCSS || this.usedRawValue) {
@@ -92,7 +118,33 @@ copyProperties(TweenedValue.prototype, {
     }
 
     return true;
-  },/*
+  },
+  getTotalTime: function() {
+    var totalTime = 0;
+    for (i = 0; i < this.steps.length; i++) {
+      totalTime += this.steps[i].time;
+    }
+    return totalTime;
+  },
+  getKeyframeTimes: function() {
+    // Return keyframe times as percentages
+    // First get the total runtime of this tween.
+    var totalTime = this.getTotalTime();
+
+    // Now let's get each keyframe end time as a percentage of
+    // the total runtime (for css)
+    // PERF TODO: this function should update the keyframe time set directly.
+    var keyframeTimes = [0];
+    var currentTime = 0;
+
+    for (var i = 0; i < this.steps.length; i++) {
+      currentTime += this.steps[i].time;
+      // PERF TODO: push eases here
+      keyframeTimes.push(currentTime / totalTime);
+    }
+    return keyframeTimes;
+  }
+  /*
   getCSS: function(property) {
     // TODO: make this work with call() and wait() (not hard)
     invariant(this.canUseCSS(), 'Cannot getCSS() if you cannot use CSS');
@@ -123,15 +175,69 @@ copyProperties(TweenedValue.prototype, {
   }*/
 });
 
+// translate3d stuff
+
+function updateKeyframeTimeSet(keyframeTimeSet, tweenedValue) {
+  // future optimization: just have TweenedValue.getKeyframeTimes() do this w/o intermediate array/obj
+  var keyframeTimes = tweenedValue.getKeyframeTimes();
+  for (var i = 0; i < keyframeTimes.length; i++) {
+    keyframeTimeSet[keyframeTimes[i]] = true;
+  }
+}
+
+function constantTweenedValueForTranslate3d(tweenedValue, value) {
+  // Often we only want to animate a subset of axes in translate3d and keep the others
+  // constant. We use this function to create a constant tweenedValue with the same ease
+  // as the target.
+  return new TweenedValue(
+    value,
+    tweenedValue.steps.map(function(step) {
+      // todo: hacky :(
+      var newStep = new TweenStep(step.time, value, function() {});
+      newStep.ease = step.ease;
+      return newStep;
+    })
+  );
+}
+
+function getTranslate3dAnimation(xTweenedValue, yTweenedValue, zTweenedValue) {
+  invariant(xTweenedValue.canUseCSS(), 'xTweenedValue cannot use CSS. Did you call getRawValue()?');
+  invariant(yTweenedValue.canUseCSS(), 'yTweenedValue cannot use CSS. Did you call getRawValue()?');
+  invariant(zTweenedValue.canUseCSS(), 'zTweenedValue cannot use CSS. Did you call getRawValue()?');
+  var keyframeTimeSet = {};
+  updateKeyframeTimeSet(keyframeTimeSet, xTweenedValue);
+  updateKeyframeTimeSet(keyframeTimeSet, yTweenedValue);
+  updateKeyframeTimeSet(keyframeTimeSet, zTweenedValue);
+  var duration = Math.max(xTweenedValue.getTotalTime(), yTweenedValue.getTotalTime(), zTweenedValue.getTotalTime());
+  var keyframes = {};
+  for (var keyframeTime in keyframeTimeSet) {
+    var rawTime = keyframeTime * duration;
+    var cssEase = xTweenedValue.getCSSEaseAtTime(rawTime);
+    invariant(cssEase, 'No CSS ease available');
+    invariant(cssEase === yTweenedValue.getCSSEaseAtTime(rawTime) && cssEase === zTweenedValue.getCSSEaseAtTime(rawTime), 'CSS eases differed');
+    keyframes[(keyframeTime * 100) + '%'] = {
+      '-webkit-transform': 'translate3d(' + xTweenedValue.getRawValueForAnimation(rawTime) + ',' + yTweenedValue.getRawValueForAnimation(rawTime)  + ',' + zTweenedValue.getRawValueForAnimation(rawTime) + ')',
+      '-webkit-animation-timing-function': cssEase
+    };
+  }
+  return {
+    duration: duration,
+    keyframes: keyframes
+  };
+}
+
 
 var tv = new TweenedValue(
   0,
   [
-    new TweenStep(10, 100, EasingFunctions.ease)
+    TweenStep.ease(10, 100, EasingFunctions.ease)
   ]
 );
 
-console.log(tv.getCSS('left'));
-console.log(tv.getRawValue(0));
-console.log(tv.getRawValue(5));
-console.log(tv.getRawValue(10));
+var tz = constantTweenedValueForTranslate3d(tv, 0);
+
+
+console.log(getTranslate3dAnimation(tv, tz, tz));
+//console.log(tv.getRawValue(0));
+//console.log(tv.getRawValue(5));
+//console.log(tv.getRawValue(10));
