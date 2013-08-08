@@ -103,7 +103,6 @@ function ImageLoader() {
   this.worker.onerror = function(event) {
     console.error('jpgworker error:', event);
   };
-  this.startTimes = {};
 }
 
 ImageLoader.prototype.handleMessage = function(event) {
@@ -114,10 +113,11 @@ ImageLoader.prototype.handleMessage = function(event) {
     imageMetadata.numComponents = event.data.numComponents;
     imageMetadata.width = event.data.width;
     imageMetadata.height = event.data.height;
+    imageMetadata.startTime = event.data.startTime;
   } else {
     imageMetadata = this.images[this.nextDataImageID];
     this.images[this.nextDataImageID] = null;
-    alert(Date.now() - this.startTimes[imageMetadata.url]);
+    document.title = 't=' + (Date.now() - imageMetadata.startTime);
     imageMetadata.cb(
       new Uint8Array(event.data),
       imageMetadata.numComponents,
@@ -128,7 +128,6 @@ ImageLoader.prototype.handleMessage = function(event) {
 };
 
 ImageLoader.prototype.loadImage = function(url, width, height, cb) {
-  this.startTimes[url] = Date.now();
   var id = 'img' + (this.ids++);
   this.images[id] = {
     numComponents: -1,

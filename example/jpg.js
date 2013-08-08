@@ -528,6 +528,9 @@ var JpegImage = (function jpegImage() {
       xhr.onload = (function() {
         // TODO catch parse error
         var data = new Uint8Array(xhr.response || xhr.mozResponseArrayBuffer);
+        if (this.ondownloaded) {
+          this.ondownloaded();
+        }
         this.parse(data);
         if (this.onload)
           this.onload();
