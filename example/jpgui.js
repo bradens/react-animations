@@ -103,6 +103,7 @@ function ImageLoader() {
   this.worker.onerror = function(event) {
     console.error('jpgworker error:', event);
   };
+  this.startTimes = {};
 }
 
 ImageLoader.prototype.handleMessage = function(event) {
@@ -116,7 +117,7 @@ ImageLoader.prototype.handleMessage = function(event) {
   } else {
     imageMetadata = this.images[this.nextDataImageID];
     this.images[this.nextDataImageID] = null;
-    console.log('loaded', imageMetadata.url);
+    alert(Date.now() - this.startTimes[imageMetadata.url]);
     imageMetadata.cb(
       new Uint8Array(event.data),
       imageMetadata.numComponents,
@@ -127,7 +128,7 @@ ImageLoader.prototype.handleMessage = function(event) {
 };
 
 ImageLoader.prototype.loadImage = function(url, width, height, cb) {
-  console.log('loading', url);
+  this.startTimes[url] = Date.now();
   var id = 'img' + (this.ids++);
   this.images[id] = {
     numComponents: -1,
