@@ -116,6 +116,7 @@ ImageLoader.prototype.handleMessage = function(event) {
   } else {
     imageMetadata = this.images[this.nextDataImageID];
     this.images[this.nextDataImageID] = null;
+    console.log('loaded', imageMetadata.url);
     imageMetadata.cb(
       new Uint8Array(event.data),
       imageMetadata.numComponents,
@@ -126,11 +127,13 @@ ImageLoader.prototype.handleMessage = function(event) {
 };
 
 ImageLoader.prototype.loadImage = function(url, width, height, cb) {
+  console.log('loading', url);
   var id = 'img' + (this.ids++);
   this.images[id] = {
     numComponents: -1,
     width: -1,
     height: -1,
+    url: url,
     cb: cb
   };
   this.worker.postMessage({
